@@ -98,21 +98,28 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     currentPath = []
     visitedStates = [currentState]
     # In each tuple, the first element is the state and the second element is how we got there
-    history = []
+    history = util.Stack()
+    longestFailure = currentPath.copy()
 
     print("Start:", problem.getStartState())
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
 
-    history.append((currentState, currentPath))
+    history.push((currentState, currentPath.copy()))
 
     while not problem.isGoalState(currentState):
+        print("\n\n\n")
+        print("Now we are at: ", currentState)
+        print("We reached here by: ", currentPath)
+
         # Get all the successors
         successors = util.Stack()
         for successor in problem.getSuccessors(currentState):
+            print("Potential Successor: ", successor)
             successors.push(successor)
 
         # Check the list of successors to see if we have any unvisited states
+        print("Visited States: ", visitedStates)
         nextNode = None
         while not successors.isEmpty():
             successor = successors.pop()
@@ -125,19 +132,33 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
 
         # If we have no unvisited states, then we need to backtrack
         if nextNode is None:
-            pass
+            print("No unvisited states found on ", currentState, ", backtracking")
+            if history.isEmpty():
+                print("No solution found, returning empty list")
+                return longestFailure
+            currentState, currentPath = history.pop()
+            print("Backtracking to: ", currentState)
+            print("Previous Path: ", currentPath)
+            continue
 
         # Now, we attempt to visit the next node
 
-        print("nextNode: ", nextNode)
+        print("Going towards unvisited state: ", nextNode)
 
         nextState = nextNode[0]
         nextAction = nextNode[1]
 
         visitedStates.append(nextState)
+
+        # Note: Spend a very long time debugging this, leaving a note
+        # It is very very very important to record the current situation as history before we update the current state
+        history.push((currentState, currentPath.copy()))
+
         currentState = nextState
         currentPath.append(nextAction)
-        history.append((currentState, currentPath))
+
+        if len(currentPath) > len(longestFailure):
+            longestFailure = currentPath.copy()
 
     return currentPath
 
