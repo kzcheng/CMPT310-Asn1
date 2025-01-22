@@ -90,7 +90,56 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    # Q1: Finding a Fixed Food Dot using Depth First Search
+
+    # Variables
+    currentState = problem.getStartState()
+    currentPath = []
+    visitedStates = [currentState]
+    # In each tuple, the first element is the state and the second element is how we got there
+    history = []
+
+    print("Start:", problem.getStartState())
+    print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
+    print("Start's successors:", problem.getSuccessors(problem.getStartState()))
+
+    history.append((currentState, currentPath))
+
+    while not problem.isGoalState(currentState):
+        # Get all the successors
+        successors = util.Stack()
+        for successor in problem.getSuccessors(currentState):
+            successors.push(successor)
+
+        # Check the list of successors to see if we have any unvisited states
+        nextNode = None
+        while not successors.isEmpty():
+            successor = successors.pop()
+            successorState = successor[0]
+
+            # If the successor is not visited, then this will be the next node we analyze
+            if successorState not in visitedStates:
+                nextNode = successor
+                break
+
+        # If we have no unvisited states, then we need to backtrack
+        if nextNode is None:
+            pass
+
+        # Now, we attempt to visit the next node
+
+        print("nextNode: ", nextNode)
+
+        nextState = nextNode[0]
+        nextAction = nextNode[1]
+
+        visitedStates.append(nextState)
+        currentState = nextState
+        currentPath.append(nextAction)
+        history.append((currentState, currentPath))
+
+    return currentPath
 
 
 def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
@@ -124,3 +173,7 @@ bfs = breadthFirstSearch
 dfs = depthFirstSearch
 astar = aStarSearch
 ucs = uniformCostSearch
+n = Directions.NORTH
+e = Directions.EAST
+s = Directions.SOUTH
+w = Directions.WEST
