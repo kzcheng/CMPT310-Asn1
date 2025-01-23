@@ -195,7 +195,7 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     currentState = problem.getStartState()
     # The path taken to reach the current state
     currentPath = []
-    visitedStates = [currentState]
+    visitedStates = []
     longestFailure = currentPath.copy()
     # Fringe contains tuples, the first element is the state, the second element is the path taken to reach this state, and the third element is the successor
     fringe = util.Stack()
@@ -208,11 +208,11 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
         print("Current State: ", currentState)
         print("We reached here by: ", currentPath)
 
-        # Get all the successors
-        successors = problem.getSuccessors(currentState)
-        print("Successors: ", successors)
-        for successor in successors:
-            if successor[0] not in visitedStates:
+        # If this is the first time visiting this state, we expand it
+        if currentState not in visitedStates:
+            visitedStates.append(currentState)
+            successors = problem.getSuccessors(currentState)
+            for successor in successors:
                 fringe.push((currentState, currentPath.copy(), successor))
 
         # If the fringe is empty, we have no solution
@@ -236,7 +236,6 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
 
         currentState = nextState
         currentPath.append(nextAction)
-        visitedStates.append(currentState)
 
         if len(currentPath) > len(longestFailure):
             longestFailure = currentPath.copy()
