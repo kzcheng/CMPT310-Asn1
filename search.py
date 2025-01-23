@@ -75,104 +75,6 @@ def tinyMazeSearch(problem: SearchProblem) -> List[Directions]:
     return [s, s, w, s, w, w, s, w]
 
 
-# Old version of depthFirstSearch, gonna rewrite it using an actual fringe
-def depthFirstSearchV1(problem: SearchProblem) -> List[Directions]:
-    """
-    Search the deepest nodes in the search tree first.
-
-    Your search algorithm needs to return a list of actions that reaches the
-    goal. Make sure to implement a graph search algorithm.
-
-    To get started, you might want to try some of these simple commands to
-    understand the search problem that is being passed in:
-
-    print("Start:", problem.getStartState())
-    print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
-    print("Start's successors:", problem.getSuccessors(problem.getStartState()))
-    """
-
-    # Q1: Finding a Fixed Food Dot using Depth First Search
-
-    # Variables
-    currentState = problem.getStartState()
-    currentPath = []
-    visitedStates = [currentState]
-    # In each tuple, the first element is the state and the second element is how we got there
-    history = util.Stack()
-    longestFailure = currentPath.copy()
-    # A place to store all the expansion results of states, this is a dictionary
-    successorsDict = {}
-
-    # Note: Using problem.getSuccessors is considered as expanding a state. The autograder will check for this, so don't use it repeatedly.
-    # print("Start:", problem.getStartState())
-    # print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
-    # print("Start's successors:", problem.getSuccessors(problem.getStartState()))
-
-    history.push((currentState, currentPath.copy()))
-
-    while not problem.isGoalState(currentState):
-        print("\n\n\n")
-        print("Now we are at: ", currentState)
-        print("We reached here by: ", currentPath)
-
-        # Get all the successors
-        successors = util.Stack()
-        # If we have already expanded this state, we don't need to do it again
-        if currentState in successorsDict:
-            print("Already expanded this state, using database")
-            successors = successorsDict[currentState]
-        else:
-            print("Expanding the state")
-            for successor in problem.getSuccessors(currentState):
-                print("Potential Successor: ", successor)
-                successors.push(successor)
-            successorsDict[currentState] = successors
-
-        # Check the list of successors to see if we have any unvisited states
-        print("Visited States: ", visitedStates)
-        nextNode = None
-        while not successors.isEmpty():
-            successor = successors.pop()
-            successorState = successor[0]
-
-            # If the successor is not visited, then this will be the next node we analyze
-            if successorState not in visitedStates:
-                nextNode = successor
-                break
-
-        # If we have no unvisited states, then we need to backtrack
-        if nextNode is None:
-            print("No unvisited states found on ", currentState, ", backtracking")
-            if history.isEmpty():
-                print("No solution found, returning longest path attempted")
-                return longestFailure
-            currentState, currentPath = history.pop()
-            print("Backtracking to: ", currentState)
-            print("Previous Path: ", currentPath)
-            continue
-
-        # Now, we attempt to visit the next node
-
-        print("Going towards unvisited state: ", nextNode)
-
-        nextState = nextNode[0]
-        nextAction = nextNode[1]
-
-        visitedStates.append(nextState)
-
-        # Note: Spend a very long time debugging this, leaving a note
-        # It is very very very important to record the current situation as history before we update the current state
-        history.push((currentState, currentPath.copy()))
-
-        currentState = nextState
-        currentPath.append(nextAction)
-
-        if len(currentPath) > len(longestFailure):
-            longestFailure = currentPath.copy()
-
-    return currentPath
-
-
 # Rewrite version, using a fringe to store the states to be expanded
 def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     """
@@ -302,8 +204,36 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
 
 def uniformCostSearch(problem: SearchProblem) -> List[Directions]:
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    # Note: Change of plan
+    # Previously, the fringe stores both the state we are going towards, and the relevant current states, which we will need to load in.
+    # However, for how util.PriorityQueue is implemented, it seems like a better idea to only store the end state after taking each action.
+    # In addition, to make things easier to read, it's probably better to store things in the dictionary type of objects.
+
+    # region Variables
+    currentState = problem.getStartState()
+    currentPath = []        # The path taken to reach the current state
+    visitedStates = []
+
+    # The fringe only stores two things, with the item being the state we are going towards, and the priority being the cost of reaching that state.
+    fringe = util.PriorityQueue()
+    # Which means, we need another dictionary to store the plan to each state. This dictionary should only store the lowest cost (most optimal) plan we know. But this also needs to store relevant information like which state we were in for each action taken.
+    planToState = {}
+
+    # Used for debugging, not mandatory
+    longestFailure = currentPath.copy()
+    stepCounter = 0
+    # endregion
+
+    while not problem.isGoalState(currentState):
+        stepCounter += 1
+        print("\n")
+        print("[ Step ", stepCounter, "]")
+        print("Current State: ", currentState)
+        print("We reached here by: ", currentPath)
+        pass
+
+    return currentPath
 
 
 def nullHeuristic(state, problem=None) -> float:
@@ -318,6 +248,104 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directi
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
     util.raiseNotDefined()
+
+
+# Old version of depthFirstSearch, gonna rewrite it using an actual fringe
+def depthFirstSearchV1(problem: SearchProblem) -> List[Directions]:
+    """
+    Search the deepest nodes in the search tree first.
+
+    Your search algorithm needs to return a list of actions that reaches the
+    goal. Make sure to implement a graph search algorithm.
+
+    To get started, you might want to try some of these simple commands to
+    understand the search problem that is being passed in:
+
+    print("Start:", problem.getStartState())
+    print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
+    print("Start's successors:", problem.getSuccessors(problem.getStartState()))
+    """
+
+    # Q1: Finding a Fixed Food Dot using Depth First Search
+
+    # Variables
+    currentState = problem.getStartState()
+    currentPath = []
+    visitedStates = [currentState]
+    # In each tuple, the first element is the state and the second element is how we got there
+    history = util.Stack()
+    longestFailure = currentPath.copy()
+    # A place to store all the expansion results of states, this is a dictionary
+    successorsDict = {}
+
+    # Note: Using problem.getSuccessors is considered as expanding a state. The autograder will check for this, so don't use it repeatedly.
+    # print("Start:", problem.getStartState())
+    # print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
+    # print("Start's successors:", problem.getSuccessors(problem.getStartState()))
+
+    history.push((currentState, currentPath.copy()))
+
+    while not problem.isGoalState(currentState):
+        print("\n\n\n")
+        print("Now we are at: ", currentState)
+        print("We reached here by: ", currentPath)
+
+        # Get all the successors
+        successors = util.Stack()
+        # If we have already expanded this state, we don't need to do it again
+        if currentState in successorsDict:
+            print("Already expanded this state, using database")
+            successors = successorsDict[currentState]
+        else:
+            print("Expanding the state")
+            for successor in problem.getSuccessors(currentState):
+                print("Potential Successor: ", successor)
+                successors.push(successor)
+            successorsDict[currentState] = successors
+
+        # Check the list of successors to see if we have any unvisited states
+        print("Visited States: ", visitedStates)
+        nextNode = None
+        while not successors.isEmpty():
+            successor = successors.pop()
+            successorState = successor[0]
+
+            # If the successor is not visited, then this will be the next node we analyze
+            if successorState not in visitedStates:
+                nextNode = successor
+                break
+
+        # If we have no unvisited states, then we need to backtrack
+        if nextNode is None:
+            print("No unvisited states found on ", currentState, ", backtracking")
+            if history.isEmpty():
+                print("No solution found, returning longest path attempted")
+                return longestFailure
+            currentState, currentPath = history.pop()
+            print("Backtracking to: ", currentState)
+            print("Previous Path: ", currentPath)
+            continue
+
+        # Now, we attempt to visit the next node
+
+        print("Going towards unvisited state: ", nextNode)
+
+        nextState = nextNode[0]
+        nextAction = nextNode[1]
+
+        visitedStates.append(nextState)
+
+        # Note: Spend a very long time debugging this, leaving a note
+        # It is very very very important to record the current situation as history before we update the current state
+        history.push((currentState, currentPath.copy()))
+
+        currentState = nextState
+        currentPath.append(nextAction)
+
+        if len(currentPath) > len(longestFailure):
+            longestFailure = currentPath.copy()
+
+    return currentPath
 
 
 # Abbreviations
