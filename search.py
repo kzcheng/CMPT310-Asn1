@@ -204,7 +204,7 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     while not problem.isGoalState(currentState):
         stepCounter += 1
         print("\n")
-        print("[Step ", stepCounter, "]")
+        print("[ Step ", stepCounter, "]")
         print("Current State: ", currentState)
         print("We reached here by: ", currentPath)
 
@@ -249,7 +249,56 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
 
     # Q2: Breadth First Search
 
-    util.raiseNotDefined()
+    # Variables
+    currentState = problem.getStartState()
+    # The path taken to reach the current state
+    currentPath = []
+    visitedStates = []
+    longestFailure = currentPath.copy()
+    # Fringe contains tuples, the first element is the state, the second element is the path taken to reach this state, and the third element is the successor
+    fringe = util.Queue()
+    stepCounter = 0
+
+    while not problem.isGoalState(currentState):
+        stepCounter += 1
+        print("\n")
+        print("[ Step ", stepCounter, "]")
+        print("Current State: ", currentState)
+        print("We reached here by: ", currentPath)
+
+        # If this is the first time visiting this state, we expand it
+        if currentState not in visitedStates:
+            visitedStates.append(currentState)
+            successors = problem.getSuccessors(currentState)
+            for successor in successors:
+                fringe.push((currentState, currentPath.copy(), successor))
+
+        # If the fringe is empty, we have no solution
+        if fringe.isEmpty():
+            print("No solution found, returning longest path attempted")
+            return longestFailure
+
+        # Get the next node to expand
+        print("")
+        nextSituation = fringe.pop()
+        currentState = nextSituation[0]
+        currentPath = nextSituation[1].copy()
+        nextNode = nextSituation[2]
+
+        print("Jumping to State: ", currentState)
+        print("Path to this state: ", currentPath)
+        print("Going towards unvisited state: ", nextNode)
+
+        nextState = nextNode[0]
+        nextAction = nextNode[1]
+
+        currentState = nextState
+        currentPath.append(nextAction)
+
+        if len(currentPath) > len(longestFailure):
+            longestFailure = currentPath.copy()
+
+    return currentPath
 
 
 def uniformCostSearch(problem: SearchProblem) -> List[Directions]:
