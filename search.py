@@ -24,6 +24,7 @@ from typing import List
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+# logging.disable(logging.DEBUG)
 
 
 class SearchProblem:
@@ -231,9 +232,61 @@ def uniformCostSearch(problem: SearchProblem) -> List[Directions]:
         stepCounter += 1
         logging.debug("\n")
         logging.debug("[ Step %r ]", stepCounter)
-        logging.debug("Current State: %r", currentState)
+        logging.debug("Current state we are analyzing: %r", currentState)
         logging.debug("We reached here by: %r", currentPath)
-        pass
+
+        # If this is the first time visiting this state, we expand it
+        if currentState not in visitedStates:
+            visitedStates.append(currentState)
+            successors = problem.getSuccessors(currentState)
+            # For each successor of the current state
+            for successor in successors:
+                successorState, successorAction, _ = successor
+
+                # Debug prints to check the structure of successor and currentPath
+                # logging.debug(f"Successor: {successor}")
+                # logging.debug(f"Successor[1]: {successor[1]}")
+                # logging.debug(f"CurrentPath: {currentPath}")
+                # logging.debug(f"CurrentPath + [successor[1]]: {currentPath + [successor[1]]}")
+
+                nextPath = currentPath + [successorAction]
+                costToSuccessor = problem.getCostOfActions(nextPath)
+
+                # Check if this new plan is not better than the previous plan, or if there is already a plan
+                oldPlan = planToState.get(successorState, {}).get("costOfPath", float("inf"))
+                logging.debug("Old Plan: %r", oldPlan)
+                if costToSuccessor >= oldPlan:
+                    continue
+
+                # Add the successor state to the fringe, with the cost of reaching that state as the priority
+                fringe.update(successorState, costToSuccessor)
+                # Add the plan to reach this state to the dictionary
+                planToState[successorState] = {
+                    "previousState": currentState,
+                    "previousPath": currentPath,
+                    "currentPath": nextPath,
+                    "costOfPath": costToSuccessor,
+                }
+                logging.debug("Added to fringe: %r", successorState)
+                logging.debug("With cost: %r", costToSuccessor)
+                logging.debug("Plan to reach this state: %r", planToState[successorState])
+
+        # If the fringe is empty, we have no solution
+        if fringe.isEmpty():
+            logging.info("No solution found, returning longest path attempted")
+            return longestFailure
+
+        # Thought: Do we need to update the plan to reach each state? Since if we found a cheaper way to reach a state, the plan may not be optimal anymore.
+
+        # Popping the fringe to decide what is the next situation to deal with
+        nextState = fringe.pop()
+
+        # Move to it
+        currentState = nextState
+        currentPath = planToState[currentState]["currentPath"]
+
+        if len(currentPath) > len(longestFailure):
+            longestFailure = currentPath.copy()
 
     return currentPath
 
