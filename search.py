@@ -75,7 +75,8 @@ def tinyMazeSearch(problem: SearchProblem) -> List[Directions]:
     return [s, s, w, s, w, w, s, w]
 
 
-def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
+# Old version of depthFirstSearch, gonna rewrite it using an actual fringe
+def depthFirstSearchV1(problem: SearchProblem) -> List[Directions]:
     """
     Search the deepest nodes in the search tree first.
 
@@ -89,7 +90,6 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
-    "*** YOUR CODE HERE ***"
 
     # Q1: Finding a Fixed Food Dot using Depth First Search
 
@@ -144,7 +144,7 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
         if nextNode is None:
             print("No unvisited states found on ", currentState, ", backtracking")
             if history.isEmpty():
-                print("No solution found, returning empty list")
+                print("No solution found, returning longest path attempted")
                 return longestFailure
             currentState, currentPath = history.pop()
             print("Backtracking to: ", currentState)
@@ -173,9 +173,82 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     return currentPath
 
 
+# Rewrite version, using a fringe to store the states to be expanded
+def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
+    """
+    Search the deepest nodes in the search tree first.
+
+    Your search algorithm needs to return a list of actions that reaches the
+    goal. Make sure to implement a graph search algorithm.
+
+    To get started, you might want to try some of these simple commands to
+    understand the search problem that is being passed in:
+
+    print("Start:", problem.getStartState())
+    print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
+    print("Start's successors:", problem.getSuccessors(problem.getStartState()))
+    """
+
+    # Q1: Finding a Fixed Food Dot using Depth First Search
+
+    # Variables
+    currentState = problem.getStartState()
+    # The path taken to reach the current state
+    currentPath = []
+    visitedStates = [currentState]
+    longestFailure = currentPath.copy()
+    # Fringe contains tuples, the first element is the state, the second element is the path taken to reach this state, and the third element is the successor
+    fringe = util.Stack()
+    stepCounter = 0
+
+    while not problem.isGoalState(currentState):
+        stepCounter += 1
+        print("\n")
+        print("[Step ", stepCounter, "]")
+        print("Current State: ", currentState)
+        print("We reached here by: ", currentPath)
+
+        # Get all the successors
+        successors = problem.getSuccessors(currentState)
+        print("Successors: ", successors)
+        for successor in successors:
+            if successor[0] not in visitedStates:
+                fringe.push((currentState, currentPath.copy(), successor))
+
+        # If the fringe is empty, we have no solution
+        if fringe.isEmpty():
+            print("No solution found, returning longest path attempted")
+            return longestFailure
+
+        # Get the next node to expand
+        print("")
+        nextSituation = fringe.pop()
+        currentState = nextSituation[0]
+        currentPath = nextSituation[1].copy()
+        nextNode = nextSituation[2]
+
+        print("Jumping to State: ", currentState)
+        print("Path to this state: ", currentPath)
+        print("Going towards unvisited state: ", nextNode)
+
+        nextState = nextNode[0]
+        nextAction = nextNode[1]
+
+        currentState = nextState
+        currentPath.append(nextAction)
+        visitedStates.append(currentState)
+
+        if len(currentPath) > len(longestFailure):
+            longestFailure = currentPath.copy()
+
+    return currentPath
+
+
 def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
     """Search the shallowest nodes in the search tree first."""
-    "*** YOUR CODE HERE ***"
+
+    # Q2: Breadth First Search
+
     util.raiseNotDefined()
 
 
