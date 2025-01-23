@@ -17,9 +17,13 @@ In search.py, you will implement generic search algorithms which are called by
 Pacman agents (in searchAgents.py).
 """
 
+import logging
 import util
 from game import Directions
 from typing import List
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 
 
 class SearchProblem:
@@ -86,9 +90,9 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     To get started, you might want to try some of these simple commands to
     understand the search problem that is being passed in:
 
-    print("Start:", problem.getStartState())
-    print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
-    print("Start's successors:", problem.getSuccessors(problem.getStartState()))
+    logging.debug("Start:", problem.getStartState())
+    logging.debug("Is the start a goal?", problem.isGoalState(problem.getStartState()))
+    logging.debug("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
 
     # Q1: Finding a Fixed Food Dot using Depth First Search
@@ -105,10 +109,10 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
 
     while not problem.isGoalState(currentState):
         stepCounter += 1
-        print("\n")
-        print("[ Step ", stepCounter, "]")
-        print("Current State: ", currentState)
-        print("We reached here by: ", currentPath)
+        logging.debug("\n")
+        logging.debug("[ Step %r ]", stepCounter)
+        logging.debug("Current State: %r", currentState)
+        logging.debug("We reached here by: %r", currentPath)
 
         # If this is the first time visiting this state, we expand it
         if currentState not in visitedStates:
@@ -119,19 +123,18 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
 
         # If the fringe is empty, we have no solution
         if fringe.isEmpty():
-            print("No solution found, returning longest path attempted")
+            logging.info("No solution found, returning longest path attempted")
             return longestFailure
 
         # Get the next node to expand
-        print("")
         nextSituation = fringe.pop()
         currentState = nextSituation[0]
         currentPath = nextSituation[1].copy()
         nextNode = nextSituation[2]
 
-        print("Jumping to State: ", currentState)
-        print("Path to this state: ", currentPath)
-        print("Going towards unvisited state: ", nextNode)
+        logging.debug("Jumping to State: %r", currentState)
+        logging.debug("Path to this state: %r", currentPath)
+        logging.debug("Going towards unvisited state: %r", nextNode)
 
         nextState = nextNode[0]
         nextAction = nextNode[1]
@@ -162,10 +165,10 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
 
     while not problem.isGoalState(currentState):
         stepCounter += 1
-        print("\n")
-        print("[ Step ", stepCounter, "]")
-        print("Current State: ", currentState)
-        print("We reached here by: ", currentPath)
+        logging.debug("\n")
+        logging.debug("[ Step %r ]", stepCounter)
+        logging.debug("Current State: %r", currentState)
+        logging.debug("We reached here by: %r", currentPath)
 
         # If this is the first time visiting this state, we expand it
         if currentState not in visitedStates:
@@ -176,19 +179,18 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
 
         # If the fringe is empty, we have no solution
         if fringe.isEmpty():
-            print("No solution found, returning longest path attempted")
+            logging.info("No solution found, returning longest path attempted")
             return longestFailure
 
         # Get the next node to expand
-        print("")
         nextSituation = fringe.pop()
         currentState = nextSituation[0]
         currentPath = nextSituation[1].copy()
         nextNode = nextSituation[2]
 
-        print("Jumping to State: ", currentState)
-        print("Path to this state: ", currentPath)
-        print("Going towards unvisited state: ", nextNode)
+        logging.debug("Jumping to State: %r", currentState)
+        logging.debug("Path to this state: %r", currentPath)
+        logging.debug("Going towards unvisited state: %r", nextNode)
 
         nextState = nextNode[0]
         nextAction = nextNode[1]
@@ -227,10 +229,10 @@ def uniformCostSearch(problem: SearchProblem) -> List[Directions]:
 
     while not problem.isGoalState(currentState):
         stepCounter += 1
-        print("\n")
-        print("[ Step ", stepCounter, "]")
-        print("Current State: ", currentState)
-        print("We reached here by: ", currentPath)
+        logging.debug("\n")
+        logging.debug("[ Step %r ]", stepCounter)
+        logging.debug("Current State: %r", currentState)
+        logging.debug("We reached here by: %r", currentPath)
         pass
 
     return currentPath
