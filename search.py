@@ -277,6 +277,7 @@ def uniformCostSearch(problem: SearchProblem) -> List[Directions]:
             return longestFailure
 
         # Thought: Do we need to update the plan to reach each state? Since if we found a cheaper way to reach a state, the plan may not be optimal anymore.
+        # Turns out, it isn't needed, since Uniform Cost Search means that when we actually expand the state, we already found the optimal plan to reach that state.
 
         # Popping the fringe to decide what is the next situation to deal with
         nextState = fringe.pop()
@@ -301,8 +302,115 @@ def nullHeuristic(state, problem=None) -> float:
 
 def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directions]:
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    return []
+
+    # Q4: A* search
+
+    # region Variables
+    currentState = problem.getStartState()
+    currentPath = []        # The path taken to reach the current state
+    visitedStates = []
+
+    # The fringe only stores two things, with the item being the state we are going towards, and the priority being the cost of reaching that state.
+    fringe = util.PriorityQueue()
+    # Which means, we need another dictionary to store the plan to each state. This dictionary should only store the lowest cost (most optimal) plan we know. But this also needs to store relevant information like which state we were in for each action taken.
+    planToState = {}
+
+    stepCounter = 0
+
+    # endregion
+
+    # Add the initial problem to the fringe and plan
+    costAStar = heuristic(currentState, problem)
+    fringe.update(currentState, costAStar)
+    planToState[currentState] = {
+        "previousState": None,
+        "previousPath": None,
+        "path": currentPath,
+        "costAStar": costAStar,
+    }
+
+    while stepCounter < 2147483648:  # Basically while true
+        # If the fringe is empty, we have no solution
+        if fringe.isEmpty():
+            logging.info("\nThe fringe is empty")
+            logging.info("No solution found")
+            return []
+
+        stepCounter += 1
+        logging.debug("\n\n[ Step %r ]", stepCounter)
+        logging.debug("The entire fringe: %r", fringe.heap)
+        logging.debug("The plans to reach every state: %r", planToState)
+
+        # Popping the fringe to decide what is the next state we need to visit, which we will then go to it
+        currentState = fringe.pop()
+        currentPath = planToState[currentState]["path"]
+
+        logging.debug("Current state we are analyzing: %r", currentState)
+        logging.debug("We reached here by: %r", currentPath)
+
+        # Check if we reached the goal
+        if problem.isGoalState(currentState):
+            logging.info("Goal State Reached")
+            break
+
+        # If some conditions are met, we will skip expanding this fringe
+        if currentState in visitedStates:
+            # If we already visited this state, we need to check if we have a better plan to reach this state
+            oldCostAStar = planToState[currentState]["costAStar"]
+            newCostAStar = problem.getCostOfActions(currentPath) + heuristic(currentState, problem)
+            logging.debug("Old path to reach this state: %r", planToState[currentState]["path"])
+            logging.debug("New path to reach this state: %r", currentPath)
+            logging.debug("Total A Star Cost of old plan: %r", oldCostAStar)
+            logging.debug("Total A Star Cost of new plan: %r", newCostAStar)
+            if newCostAStar >= oldCostAStar:
+                logging.debug("Already visited this state, and the previous plan is better, no need to expand this state, skipping")
+                continue
+        else:
+            # If this is the first time visiting this state, we should add it to the visited states
+            visitedStates.append(currentState)
+        
+        # Add the plan to reach this state to the dictionary
+        planToState[currentState] = {
+            "path": currentPath,
+            "costAStar": problem.getCostOfActions(currentPath) + heuristic(currentState, problem),
+        }
+
+        # Now we should expand this state
+        successors = problem.getSuccessors(currentState)
+        logging.debug("")
+        logging.debug("Successors of the current state: %r", successors)
+        # For each successor of the current state
+        for successor in successors:
+            nextState, nextAction, _ = successor
+            logging.debug("")
+            logging.debug("Analyzing successor: %r", successor)
+
+            nextPath = currentPath + [nextAction]
+            nextCostToReach = problem.getCostOfActions(nextPath)
+            logging.debug("Next path: %r", nextPath)
+            logging.debug("nextCostToReach: %r", nextCostToReach)
+            nextCostAStar = nextCostToReach + heuristic(nextState, problem)
+
+            # Check if this new plan is not better than the previous plan, or if there is already a plan
+            oldCostAStar = planToState.get(nextState, {}).get("costAStar", float("inf"))
+            logging.debug("Old Plan: %r", oldCostAStar)
+            if nextCostAStar >= oldCostAStar:
+                continue
+
+            # Add the successor state to the fringe, with the cost of reaching that state as the priority
+            fringe.update(nextState, nextCostAStar)
+            logging.debug("Added to fringe: %r", nextState)
+            logging.debug("With A star cost: %r", nextCostAStar)
+
+
+        
+
+    logging.debug("")
+    logging.debug("Path Found")
+    logging.debug("Final Path: %r", currentPath)
+    return currentPath
 
 
 # Old version of depthFirstSearch, gonna rewrite it using an actual fringe
@@ -400,6 +508,95 @@ def depthFirstSearchV1(problem: SearchProblem) -> List[Directions]:
         if len(currentPath) > len(longestFailure):
             longestFailure = currentPath.copy()
 
+    return currentPath
+
+# Old version of A Star Search, doesn't work properly
+# Gonna try to restructure it a bit
+
+
+def aStarSearchV1(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directions]:
+    """Search the node that has the lowest combined cost and heuristic first."""
+
+    return []
+
+    # Q4: A* search
+
+    # region Variables
+    currentState = problem.getStartState()
+    currentPath = []        # The path taken to reach the current state
+    visitedStates = []
+
+    # The fringe only stores two things, with the item being the state we are going towards, and the priority being the cost of reaching that state.
+    fringe = util.PriorityQueue()
+    # Which means, we need another dictionary to store the plan to each state. This dictionary should only store the lowest cost (most optimal) plan we know. But this also needs to store relevant information like which state we were in for each action taken.
+    planToState = {}
+
+    # Used for debugging, not mandatory
+    longestFailure = currentPath.copy()
+    stepCounter = 0
+    # endregion
+
+    while not problem.isGoalState(currentState):
+        stepCounter += 1
+        logging.debug("\n")
+        logging.debug("[ Step %r ]", stepCounter)
+        logging.debug("Current state we are analyzing: %r", currentState)
+        logging.debug("We reached here by: %r", currentPath)
+
+        # If this is the first time visiting this state, we expand it
+        # if currentState not in visitedStates:
+        visitedStates.append(currentState)
+        successors = problem.getSuccessors(currentState)
+        # For each successor of the current state
+        for successor in successors:
+            nextState, nextAction, _ = successor
+            logging.debug("")
+            logging.debug("Analyzing successor: %r", successor)
+
+            nextPath = currentPath + [nextAction]
+            nextCostToReach = problem.getCostOfActions(nextPath)
+            logging.debug("Next path: %r", nextPath)
+            logging.debug("nextCostToReach: %r", nextCostToReach)
+            nextCostAStar = nextCostToReach + heuristic(nextState, problem)
+
+            # Check if this new plan is not better than the previous plan, or if there is already a plan
+            oldCostAStar = planToState.get(nextState, {}).get("costAStar", float("inf"))
+            logging.debug("Old Plan: %r", oldCostAStar)
+            if nextCostAStar >= oldCostAStar:
+                continue
+
+            # Add the successor state to the fringe, with the cost of reaching that state as the priority
+            fringe.update(nextState, nextCostAStar)
+            # Add the plan to reach this state to the dictionary
+            planToState[nextState] = {
+                "previousState": currentState,
+                "previousPath": currentPath,
+                "currentPath": nextPath,
+                "costAStar": nextCostAStar,
+            }
+            logging.debug("Added to fringe: %r", nextState)
+            logging.debug("With A star cost: %r", nextCostAStar)
+            logging.debug("Plan to reach this state: %r", planToState[nextState])
+            logging.debug("The entire fringe: %r", fringe.heap)
+
+        # If the fringe is empty, we have no solution
+        if fringe.isEmpty():
+            logging.info("No solution found, returning longest path attempted")
+            return longestFailure
+
+        # Popping the fringe to decide what is the next situation to deal with
+        nextState = fringe.pop()
+
+        # Move to it
+        currentState = nextState
+        currentPath = planToState[currentState]["currentPath"]
+
+        if len(currentPath) > len(longestFailure):
+            longestFailure = currentPath.copy()
+
+    logging.debug("")
+    logging.debug("Path Found")
+    logging.debug("Final Path: %r", currentPath)
     return currentPath
 
 
