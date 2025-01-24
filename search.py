@@ -24,7 +24,7 @@ from typing import List
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
-# logging.disable(logging.DEBUG)
+logging.disable(logging.DEBUG)
 
 
 class SearchProblem:
@@ -80,7 +80,6 @@ def tinyMazeSearch(problem: SearchProblem) -> List[Directions]:
     return [s, s, w, s, w, w, s, w]
 
 
-# Rewrite version, using a fringe to store the states to be expanded
 def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     """
     Search the deepest nodes in the search tree first.
@@ -301,106 +300,84 @@ def nullHeuristic(state, problem=None) -> float:
 
 def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directions]:
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
 
+    # Each element in the fringe stores 2 things
+    # 1. The next state we are going towards
+    # 2. The priority of dealing with it
+    fringe = util.PriorityQueue()
 
-# Old version of depthFirstSearch, gonna rewrite it using an actual fringe
-def depthFirstSearchV1(problem: SearchProblem) -> List[Directions]:
-    """
-    Search the deepest nodes in the search tree first.
+    # Each element records the path to reach each state
+    # It should only store the most optimal way of reaching each state
+    pathsToState = {}
 
-    Your search algorithm needs to return a list of actions that reaches the
-    goal. Make sure to implement a graph search algorithm.
+    # If a variable don't have anything before it, it means that this is the current one we are working on
+    state = problem.getStartState()
+    path = []  # The path is the path to reach the current state from start
 
-    To get started, you might want to try some of these simple commands to
-    understand the search problem that is being passed in:
+    # Stuff used for debugging
+    stepCounter = 0
 
-    print("Start:", problem.getStartState())
-    print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
-    print("Start's successors:", problem.getSuccessors(problem.getStartState()))
-    """
+    # Before we begin looping through the fringe to analyze every state, we need to add the initial condition into the fringe
+    cost = problem.getCostOfActions(path) + heuristic(state, problem)
+    fringe.update(state, cost)
+    pathsToState[state] = path
 
-    # Q1: Finding a Fixed Food Dot using Depth First Search
+    while stepCounter < 1000000:  # Arbitrary cap to number of loops
+        if fringe.isEmpty():
+            logging.info("\nThe fringe is empty")
+            logging.info("No solution found")
+            return []
 
-    # Variables
-    currentState = problem.getStartState()
-    currentPath = []
-    visitedStates = [currentState]
-    # In each tuple, the first element is the state and the second element is how we got there
-    history = util.Stack()
-    longestFailure = currentPath.copy()
-    # A place to store all the expansion results of states, this is a dictionary
-    successorsDict = {}
+        # If there are still things we can analyze in the fringe, we should do it
+        stepCounter += 1
+        logging.debug("\n\n[ Step %r ]", stepCounter)
+        logging.debug("Current entire fringe: %r", fringe.heap)
+        logging.debug("The paths to reach every state: %r", pathsToState)
 
-    # Note: Using problem.getSuccessors is considered as expanding a state. The autograder will check for this, so don't use it repeatedly.
-    # print("Start:", problem.getStartState())
-    # print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
-    # print("Start's successors:", problem.getSuccessors(problem.getStartState()))
+        # Popping the fringe to decide what is the next state we need to visit, which we will then go to it
+        state = fringe.pop()
+        path = pathsToState[state]
+        logging.debug("Current state we are analyzing: %r", state)
 
-    history.push((currentState, currentPath.copy()))
+        # Check if we are analyzing the goal, if so, we are done
+        if problem.isGoalState(state):
+            logging.debug("")
+            logging.info("Goal State Reached")
+            logging.debug("Path Found")
+            logging.debug("Final Path: %r", path)
+            return path
 
-    while not problem.isGoalState(currentState):
-        print("\n\n\n")
-        print("Now we are at: ", currentState)
-        print("We reached here by: ", currentPath)
+        # If this is not the goal, we must expand it
+        for successor in problem.getSuccessors(state):
+            # The 3rd element is the cost of the next single action
+            nextState, nextAction, _ = successor
+            nextPath = path + [nextAction]
+            nextCost = problem.getCostOfActions(nextPath) + heuristic(nextState, problem)
 
-        # Get all the successors
-        successors = util.Stack()
-        # If we have already expanded this state, we don't need to do it again
-        if currentState in successorsDict:
-            print("Already expanded this state, using database")
-            successors = successorsDict[currentState]
-        else:
-            print("Expanding the state")
-            for successor in problem.getSuccessors(currentState):
-                print("Potential Successor: ", successor)
-                successors.push(successor)
-            successorsDict[currentState] = successors
+            if nextState in pathsToState:
+                oldNextPath = pathsToState[nextState]
+                oldNextCost = problem.getCostOfActions(oldNextPath) + heuristic(nextState, problem)
+                if nextCost < oldNextCost:
+                    # Add new state to fringe
+                    fringe.update(nextState, nextCost)
+                    logging.debug("Added new state to fringe: %r", nextState)
+                    logging.debug("With cost: %r", nextCost)
 
-        # Check the list of successors to see if we have any unvisited states
-        print("Visited States: ", visitedStates)
-        nextNode = None
-        while not successors.isEmpty():
-            successor = successors.pop()
-            successorState = successor[0]
+                    # Also add this new path in the dictionary
+                    pathsToState[nextState] = nextPath
+                    logging.debug("With planned path to reach state: %r", nextCost)
+            else:
+                # Add new state to fringe
+                fringe.update(nextState, nextCost)
+                logging.debug("Added new state to fringe: %r", nextState)
+                logging.debug("With cost: %r", nextCost)
 
-            # If the successor is not visited, then this will be the next node we analyze
-            if successorState not in visitedStates:
-                nextNode = successor
-                break
+                # Also add this new path in the dictionary
+                pathsToState[nextState] = nextPath
+                logging.debug("With planned path to reach state: %r", nextPath)
 
-        # If we have no unvisited states, then we need to backtrack
-        if nextNode is None:
-            print("No unvisited states found on ", currentState, ", backtracking")
-            if history.isEmpty():
-                print("No solution found, returning longest path attempted")
-                return longestFailure
-            currentState, currentPath = history.pop()
-            print("Backtracking to: ", currentState)
-            print("Previous Path: ", currentPath)
-            continue
-
-        # Now, we attempt to visit the next node
-
-        print("Going towards unvisited state: ", nextNode)
-
-        nextState = nextNode[0]
-        nextAction = nextNode[1]
-
-        visitedStates.append(nextState)
-
-        # Note: Spend a very long time debugging this, leaving a note
-        # It is very very very important to record the current situation as history before we update the current state
-        history.push((currentState, currentPath.copy()))
-
-        currentState = nextState
-        currentPath.append(nextAction)
-
-        if len(currentPath) > len(longestFailure):
-            longestFailure = currentPath.copy()
-
-    return currentPath
+    logging.error("Loop limit reached, aborting search")
+    return []
 
 
 # Abbreviations
