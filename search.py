@@ -298,6 +298,27 @@ def nullHeuristic(state, problem=None) -> float:
     return 0
 
 
+def updateFringe(problem, heuristic, fringe, pathsToState, state, successor):
+    path = pathsToState[state]
+    nextState, nextAction, _ = successor    # The 3rd element is the cost of the next single action
+    nextPath = path + [nextAction]
+    nextCost = problem.getCostOfActions(nextPath) + heuristic(nextState, problem)
+
+    # Decide if we should add the next state to the fringe
+    # Check if we have already found a path to it
+    # If so, check if our new path is better than the old path
+    shouldUpdate = nextState not in pathsToState or nextCost < problem.getCostOfActions(pathsToState[nextState]) + heuristic(nextState, problem)
+
+    if shouldUpdate:
+        fringe.update(nextState, nextCost)
+        logging.debug("Added new state to fringe: %r", nextState)
+        logging.debug("With cost: %r", nextCost)
+
+        pathsToState[nextState] = nextPath
+        logging.debug("With planned path to reach state: %r", nextPath)
+    pass
+
+
 def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directions]:
     """Search the node that has the lowest combined cost and heuristic first."""
 
@@ -336,45 +357,21 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directi
 
         # Popping the fringe to decide what is the next state we need to visit, which we will then go to it
         state = fringe.pop()
-        path = pathsToState[state]
         logging.debug("Current state we are analyzing: %r", state)
 
         # Check if we are analyzing the goal, if so, we are done
         if problem.isGoalState(state):
             logging.debug("")
             logging.info("Goal State Reached")
+
+            path = pathsToState[state]
             logging.debug("Path Found")
             logging.debug("Final Path: %r", path)
             return path
 
         # If this is not the goal, we must expand it
         for successor in problem.getSuccessors(state):
-            # The 3rd element is the cost of the next single action
-            nextState, nextAction, _ = successor
-            nextPath = path + [nextAction]
-            nextCost = problem.getCostOfActions(nextPath) + heuristic(nextState, problem)
-
-            if nextState in pathsToState:
-                oldNextPath = pathsToState[nextState]
-                oldNextCost = problem.getCostOfActions(oldNextPath) + heuristic(nextState, problem)
-                if nextCost < oldNextCost:
-                    # Add new state to fringe
-                    fringe.update(nextState, nextCost)
-                    logging.debug("Added new state to fringe: %r", nextState)
-                    logging.debug("With cost: %r", nextCost)
-
-                    # Also add this new path in the dictionary
-                    pathsToState[nextState] = nextPath
-                    logging.debug("With planned path to reach state: %r", nextCost)
-            else:
-                # Add new state to fringe
-                fringe.update(nextState, nextCost)
-                logging.debug("Added new state to fringe: %r", nextState)
-                logging.debug("With cost: %r", nextCost)
-
-                # Also add this new path in the dictionary
-                pathsToState[nextState] = nextPath
-                logging.debug("With planned path to reach state: %r", nextPath)
+            updateFringe(problem, heuristic, fringe, pathsToState, state, successor)
 
     logging.error("Loop limit reached, aborting search")
     return []
