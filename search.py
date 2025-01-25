@@ -298,23 +298,33 @@ def nullHeuristic(state, problem=None) -> float:
     return 0
 
 
-def updateFringe(problem, heuristic, fringe, pathsToState, state, successor):
-    path = pathsToState[state]
+class SearchContext:
+    def __init__(self, problem, heuristic, fringe, paths):
+        self.problem = problem
+        self.heuristic = heuristic
+        self.fringe = fringe
+        self.paths = paths
+
+def getCostAStar(context, state, path):
+    return context.problem.getCostOfActions(path) + context.heuristic(state, context.problem)
+
+def updateFringe(context, state, successor):
+    path = context.paths[state]
     nextState, nextAction, _ = successor    # The 3rd element is the cost of the next single action
     nextPath = path + [nextAction]
-    nextCost = problem.getCostOfActions(nextPath) + heuristic(nextState, problem)
+    nextCost = getCostAStar(context, nextState, nextPath)
 
     # Decide if we should add the next state to the fringe
     # Check if we have already found a path to it
     # If so, check if our new path is better than the old path
-    shouldUpdate = nextState not in pathsToState or nextCost < problem.getCostOfActions(pathsToState[nextState]) + heuristic(nextState, problem)
+    shouldUpdate = nextState not in context.paths or nextCost < context.problem.getCostOfActions(context.paths[nextState]) + context.heuristic(nextState, context.problem)
 
     if shouldUpdate:
-        fringe.update(nextState, nextCost)
+        context.fringe.update(nextState, nextCost)
         logging.debug("Added new state to fringe: %r", nextState)
         logging.debug("With cost: %r", nextCost)
 
-        pathsToState[nextState] = nextPath
+        context.paths[nextState] = nextPath
         logging.debug("With planned path to reach state: %r", nextPath)
     pass
 
@@ -329,7 +339,10 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directi
 
     # Each element records the path to reach each state
     # It should only store the most optimal way of reaching each state
-    pathsToState = {}
+    paths = {}
+
+    # The context stores some important parts about the search to pass into methods
+    context = SearchContext(problem, heuristic, fringe, paths)
 
     # If a variable don't have anything before it, it means that this is the current one we are working on
     state = problem.getStartState()
@@ -339,12 +352,12 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directi
     stepCounter = 0
 
     # Before we begin looping through the fringe to analyze every state, we need to add the initial condition into the fringe
-    cost = problem.getCostOfActions(path) + heuristic(state, problem)
-    fringe.update(state, cost)
-    pathsToState[state] = path
+    cost = getCostAStar(context, state, path)
+    context.fringe.update(state, cost)
+    context.paths[state] = path
 
     while stepCounter < 1000000:  # Arbitrary cap to number of loops
-        if fringe.isEmpty():
+        if context.fringe.isEmpty():
             logging.info("\nThe fringe is empty")
             logging.info("No solution found")
             return []
@@ -352,26 +365,26 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directi
         # If there are still things we can analyze in the fringe, we should do it
         stepCounter += 1
         logging.debug("\n\n[ Step %r ]", stepCounter)
-        logging.debug("Current entire fringe: %r", fringe.heap)
-        logging.debug("The paths to reach every state: %r", pathsToState)
+        logging.debug("Current entire fringe: %r", context.fringe.heap)
+        logging.debug("The paths to reach every state: %r", context.paths)
 
         # Popping the fringe to decide what is the next state we need to visit, which we will then go to it
-        state = fringe.pop()
+        state = context.fringe.pop()
         logging.debug("Current state we are analyzing: %r", state)
 
         # Check if we are analyzing the goal, if so, we are done
-        if problem.isGoalState(state):
+        if context.problem.isGoalState(state):
             logging.debug("")
             logging.info("Goal State Reached")
 
-            path = pathsToState[state]
+            path = context.paths[state]
             logging.debug("Path Found")
             logging.debug("Final Path: %r", path)
             return path
 
         # If this is not the goal, we must expand it
-        for successor in problem.getSuccessors(state):
-            updateFringe(problem, heuristic, fringe, pathsToState, state, successor)
+        for successor in context.problem.getSuccessors(state):
+            updateFringe(context, state, successor)
 
     logging.error("Loop limit reached, aborting search")
     return []
