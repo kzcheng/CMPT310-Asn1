@@ -148,6 +148,35 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     return currentPath
 
 
+class SearchContext:
+    def __init__(self, problem, heuristic, fringe, paths):
+        self.problem = problem
+        self.heuristic = heuristic
+        self.fringe = fringe
+        self.paths = paths
+
+def getCostBFS(context, state, path):
+    return len(path)
+
+def updateFringeBFS(context, state, successor):
+    path = context.paths[state]
+    nextState, nextAction, _ = successor    # The 3rd element is the cost of the next single action
+    nextPath = path + [nextAction]
+    nextCost = getCostBFS(context, nextState, nextPath)
+
+    # Decide if we should add the next state to the fringe
+    # Check if we have already found a path to it
+    # If so, check if our new path is better than the old path
+    shouldUpdate = nextState not in context.paths
+
+    if shouldUpdate:
+        context.fringe.update(nextState, nextCost)
+        logging.debug("Added new state to fringe: %r", nextState)
+        logging.debug("With cost: %r", nextCost)
+
+        context.paths[nextState] = nextPath
+        logging.debug("With planned path to reach state: %r", nextPath)
+
 def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
     """Search the shallowest nodes in the search tree first."""
 
@@ -157,60 +186,68 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
     # logging.debug("self.startingPosition = %r", problem.getStartState())
     # return []
 
-
     # Q2: Breadth First Search
 
-    # Variables
-    currentState = problem.getStartState()
-    # The path taken to reach the current state
-    currentPath = []
-    visitedStates = []
-    longestFailure = currentPath.copy()
-    # Fringe contains tuples, the first element is the state, the second element is the path taken to reach this state, and the third element is the successor
-    fringe = util.Queue()
+    # Each element in the fringe stores 2 things
+    # 1. The next state we are going towards
+    # 2. The priority of dealing with it
+    fringe = util.PriorityQueue()
+
+    # Each element records the path to reach each state
+    # It should only store the most optimal way of reaching each state
+    paths = {}
+
+    # Since BFS is basically just A* with null heuristic
+    # And cost being synced to 1
+    heuristic = nullHeuristic
+
+    # The context stores some important parts about the search to pass into methods
+    context = SearchContext(problem, heuristic, fringe, paths)
+
+    # If a variable don't have anything before it, it means that this is the current one we are working on
+    state = problem.getStartState()
+    path = []  # The path is the path to reach the current state from start
+
+    # Stuff used for debugging
     stepCounter = 0
 
-    while not problem.isGoalState(currentState):
+    # Before we begin looping through the fringe to analyze every state, we need to add the initial condition into the fringe
+    cost = getCostBFS(context, state, path)
+    context.fringe.update(state, cost)
+    context.paths[state] = path
+
+    while stepCounter < 1000000:  # Arbitrary cap to number of loops
+        if context.fringe.isEmpty():
+            logging.info("\nThe fringe is empty")
+            logging.info("No solution found")
+            return []
+
+        # If there are still things we can analyze in the fringe, we should do it
         stepCounter += 1
-        logging.debug("\n")
-        logging.debug("[ Step %r ]", stepCounter)
-        logging.debug("Current State: %r", currentState)
-        logging.debug("We reached here by: %r", currentPath)
+        logging.debug("\n\n[ Step %r ]", stepCounter)
+        logging.debug("Current entire fringe: %r", context.fringe.heap)
+        logging.debug("The paths to reach every state: %r", context.paths)
 
-        # If this is the first time visiting this state, we expand it
-        if currentState not in visitedStates:
-            visitedStates.append(currentState)
-            successors = problem.getSuccessors(currentState)
-            for successor in successors:
-                fringe.push((currentState, currentPath.copy(), successor))
-        else:
-            continue
+        # Popping the fringe to decide what is the next state we need to visit, which we will then go to it
+        state = context.fringe.pop()
+        logging.debug("Current state we are analyzing: %r", state)
 
-        # If the fringe is empty, we have no solution
-        if fringe.isEmpty():
-            logging.info("No solution found, returning longest path attempted")
-            return longestFailure
+        # Check if we are analyzing the goal, if so, we are done
+        if context.problem.isGoalState(state):
+            logging.debug("")
+            logging.info("Goal State Reached")
 
-        # Get the next node to expand
-        nextSituation = fringe.pop()
-        currentState = nextSituation[0]
-        currentPath = nextSituation[1].copy()
-        nextNode = nextSituation[2]
+            path = context.paths[state]
+            logging.debug("Path Found")
+            logging.debug("Final Path: %r", path)
+            return path
 
-        logging.debug("Jumping to State: %r", currentState)
-        logging.debug("Path to this state: %r", currentPath)
-        logging.debug("Going towards unvisited state: %r", nextNode)
+        # If this is not the goal, we must expand it
+        for successor in context.problem.getSuccessors(state):
+            updateFringeBFS(context, state, successor)
 
-        nextState = nextNode[0]
-        nextAction = nextNode[1]
-
-        currentState = nextState
-        currentPath.append(nextAction)
-
-        if len(currentPath) > len(longestFailure):
-            longestFailure = currentPath.copy()
-
-    return currentPath
+    logging.error("Loop limit reached, aborting search")
+    return []
 
 
 def uniformCostSearch(problem: SearchProblem) -> List[Directions]:
@@ -307,19 +344,11 @@ def nullHeuristic(state, problem=None) -> float:
     return 0
 
 
-class SearchContext:
-    def __init__(self, problem, heuristic, fringe, paths):
-        self.problem = problem
-        self.heuristic = heuristic
-        self.fringe = fringe
-        self.paths = paths
-
-
 def getCostAStar(context, state, path):
     return context.problem.getCostOfActions(path) + context.heuristic(state, context.problem)
 
 
-def updateFringe(context, state, successor):
+def updateFringeAStar(context, state, successor):
     path = context.paths[state]
     nextState, nextAction, _ = successor    # The 3rd element is the cost of the next single action
     nextPath = path + [nextAction]
@@ -394,7 +423,7 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directi
 
         # If this is not the goal, we must expand it
         for successor in context.problem.getSuccessors(state):
-            updateFringe(context, state, successor)
+            updateFringeAStar(context, state, successor)
 
     logging.error("Loop limit reached, aborting search")
     return []
