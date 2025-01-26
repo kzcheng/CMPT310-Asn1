@@ -153,55 +153,63 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
 
     # Q2: Breadth First Search
 
-    # Variables
-    currentState = problem.getStartState()
-    # The path taken to reach the current state
-    currentPath = []
-    visitedStates = []
-    longestFailure = currentPath.copy()
-    # Fringe contains tuples, the first element is the state, the second element is the path taken to reach this state, and the third element is the successor
+    # The fringe online stores 1 thing, which is the state we are going towards
     fringe = util.Queue()
+
+    # Each element records the path to reach each state
+    # In BFS, only the first way of reaching each state is recorded
+    paths = {}
+
+    state = problem.getStartState()
+    path = []   # The path is the path to reach the current state from start
+
+    # Stuff used for debugging
     stepCounter = 0
 
-    while not problem.isGoalState(currentState):
-        stepCounter += 1
-        logging.debug("\n")
-        logging.debug("[ Step %r ]", stepCounter)
-        logging.debug("Current State: %r", currentState)
-        logging.debug("We reached here by: %r", currentPath)
+    # Before we begin looping through the fringe to analyze every state, we need to add the initial condition into the fringe
+    fringe.push(state)
+    paths[state] = path.copy()
 
-        # If this is the first time visiting this state, we expand it
-        if currentState not in visitedStates:
-            visitedStates.append(currentState)
-            successors = problem.getSuccessors(currentState)
-            for successor in successors:
-                fringe.push((currentState, currentPath.copy(), successor))
-
-        # If the fringe is empty, we have no solution
+    while stepCounter < 1000000:  # Arbitrary cap to number of loops
         if fringe.isEmpty():
-            logging.info("No solution found, returning longest path attempted")
-            return longestFailure
+            logging.info("\nThe fringe is empty")
+            logging.info("No solution found")
+            return []
 
-        # Get the next node to expand
-        nextSituation = fringe.pop()
-        currentState = nextSituation[0]
-        currentPath = nextSituation[1].copy()
-        nextNode = nextSituation[2]
+        # If there are still things we can analyze in the fringe, we should do it
+        stepCounter += 1
+        logging.debug("\n\n[ Step %r ]", stepCounter)
+        # logging.debug("Current entire fringe: %r", fringe.list)
+        logging.debug("\nThe paths to reach every state: %r", paths)
 
-        logging.debug("Jumping to State: %r", currentState)
-        logging.debug("Path to this state: %r", currentPath)
-        logging.debug("Going towards unvisited state: %r", nextNode)
+        # Popping the fringe to decide what is the next state we need to visit, which we will then go to it
+        state = fringe.pop()
+        path = paths[state].copy()
+        logging.debug("Current state we are analyzing: %r", state)
 
-        nextState = nextNode[0]
-        nextAction = nextNode[1]
+        # Check if we are analyzing the goal, if so, we are done
+        if problem.isGoalState(state):
+            logging.debug("")
+            logging.info("Goal State Reached")
 
-        currentState = nextState
-        currentPath.append(nextAction)
+            logging.debug("Path Found")
+            logging.debug("Final Path: %r", path)
+            return path
 
-        if len(currentPath) > len(longestFailure):
-            longestFailure = currentPath.copy()
+        # If this is not the goal, we must expand it
+        for successor in problem.getSuccessors(state):
+            nextState, nextAction, _ = successor
+            nextPath = path + [nextAction]
+            if nextState not in paths:
+                fringe.push(nextState)
+                logging.debug("Added new state to fringe: %r", nextState)
+                paths[nextState] = nextPath.copy()
+                logging.debug("With planned path to reach state: %r", nextPath)
 
-    return currentPath
+        # logging.debug("Current entire fringe: %r", fringe.list)
+
+    logging.error("Loop limit reached, aborting search")
+    return []
 
 
 def uniformCostSearch(problem: SearchProblem) -> List[Directions]:
@@ -305,8 +313,10 @@ class SearchContext:
         self.fringe = fringe
         self.paths = paths
 
+
 def getCostAStar(context, state, path):
     return context.problem.getCostOfActions(path) + context.heuristic(state, context.problem)
+
 
 def updateFringe(context, state, successor):
     path = context.paths[state]
@@ -326,7 +336,6 @@ def updateFringe(context, state, successor):
 
         context.paths[nextState] = nextPath
         logging.debug("With planned path to reach state: %r", nextPath)
-    pass
 
 
 def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directions]:
