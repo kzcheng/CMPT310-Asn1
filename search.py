@@ -24,7 +24,7 @@ from typing import List
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
-# logging.disable(logging.DEBUG)
+logging.disable(logging.DEBUG)
 
 
 class SearchProblem:
@@ -170,7 +170,7 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
     fringe.push(state)
     paths[state] = path.copy()
 
-    while stepCounter < 10000000:  # Arbitrary cap to number of loops
+    while stepCounter < 1000000:  # Arbitrary cap to number of loops
         if fringe.isEmpty():
             logging.info("\nThe fringe is empty")
             logging.info("No solution found")
@@ -179,8 +179,8 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
         # If there are still things we can analyze in the fringe, we should do it
         stepCounter += 1
         logging.debug("\n\n[ Step %r ]", stepCounter)
-        logging.debug("Current entire fringe: %r", fringe.list)
-        logging.debug("The paths to reach every state: %r", paths)
+        # logging.debug("Current entire fringe: %r", fringe.list)
+        logging.debug("\nThe paths to reach every state: %r", paths)
 
         # Popping the fringe to decide what is the next state we need to visit, which we will then go to it
         state = fringe.pop()
@@ -206,7 +206,7 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
                 paths[nextState] = nextPath.copy()
                 logging.debug("With planned path to reach state: %r", nextPath)
 
-        logging.debug("Current entire fringe: %r", fringe.list)
+        # logging.debug("Current entire fringe: %r", fringe.list)
 
     logging.error("Loop limit reached, aborting search")
     return []
