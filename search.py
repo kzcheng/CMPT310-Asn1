@@ -151,6 +151,13 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
 def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
     """Search the shallowest nodes in the search tree first."""
 
+    # Q5: Finding All the Corners
+    # This is code for testing, remove them when things are done.
+    # logging.debug("\n\n\n")
+    # logging.debug("self.startingPosition = %r", problem.getStartState())
+    # return []
+
+
     # Q2: Breadth First Search
 
     # Variables
@@ -176,6 +183,8 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
             successors = problem.getSuccessors(currentState)
             for successor in successors:
                 fringe.push((currentState, currentPath.copy(), successor))
+        else:
+            continue
 
         # If the fringe is empty, we have no solution
         if fringe.isEmpty():
@@ -305,8 +314,10 @@ class SearchContext:
         self.fringe = fringe
         self.paths = paths
 
+
 def getCostAStar(context, state, path):
     return context.problem.getCostOfActions(path) + context.heuristic(state, context.problem)
+
 
 def updateFringe(context, state, successor):
     path = context.paths[state]
@@ -326,7 +337,6 @@ def updateFringe(context, state, successor):
 
         context.paths[nextState] = nextPath
         logging.debug("With planned path to reach state: %r", nextPath)
-    pass
 
 
 def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directions]:

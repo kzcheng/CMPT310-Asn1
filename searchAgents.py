@@ -293,6 +293,20 @@ class CornersProblem(search.SearchProblem):
     You must select a suitable state space and successor function
     """
 
+    # Q5: Finding All the Corners
+    class State:
+        def __init__(self, pacmanPosition, c1Flag, c2Flag, c3Flag, c4Flag):
+            self.pacmanPosition = pacmanPosition
+            self.c1Flag = c1Flag
+            self.c2Flag = c2Flag
+            self.c3Flag = c3Flag
+            self.c4Flag = c4Flag
+
+        def __repr__(self):
+            return (f"State(pacmanPosition={self.pacmanPosition}, "
+                    f"c1Flag={self.c1Flag}, c2Flag={self.c2Flag}, "
+                    f"c3Flag={self.c3Flag}, c4Flag={self.c4Flag})")
+
     def __init__(self, startingGameState: pacman.GameState):
         """
         Stores the walls, pacman's starting position and corners.
@@ -311,17 +325,20 @@ class CornersProblem(search.SearchProblem):
         Returns the start state (in your state space, not the full Pacman state
         space)
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
 
-    def isGoalState(self, state: Any):
+        # The state should include the current position of Pacman, and whether the 4 corners have been visited
+
+        return CornersProblem.State(self.startingPosition, False, False, False, False)
+
+    def isGoalState(self, state: State):
         """
         Returns whether this search state is a goal state of the problem.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
 
-    def getSuccessors(self, state: Any):
+        isGoal = state.c1Flag and state.c2Flag and state.c3Flag and state.c4Flag
+        return isGoal
+
+    def getSuccessors(self, state: State):
         """
         Returns successor states, the actions they require, and a cost of 1.
 
@@ -341,7 +358,24 @@ class CornersProblem(search.SearchProblem):
             #   nextx, nexty = int(x + dx), int(y + dy)
             #   hitsWall = self.walls[nextx][nexty]
 
-            "*** YOUR CODE HERE ***"
+            x, y = state.pacmanPosition
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            if not self.walls[nextx][nexty]:
+                nextPosition = (nextx, nexty)
+                nextState = CornersProblem.State(nextPosition, state.c1Flag, state.c2Flag, state.c3Flag, state.c4Flag)
+
+                if nextPosition == self.corners[0]:
+                    nextState.c1Flag = True
+                if nextPosition == self.corners[1]:
+                    nextState.c2Flag = True
+                if nextPosition == self.corners[2]:
+                    nextState.c3Flag = True
+                if nextPosition == self.corners[3]:
+                    nextState.c4Flag = True
+
+                cost = 1    # Forced to be 1 for this problem
+                successors.append((nextState, action, cost))
 
         self._expanded += 1  # DO NOT CHANGE
         return successors
