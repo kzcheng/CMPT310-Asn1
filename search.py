@@ -24,7 +24,7 @@ from typing import List
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
-logging.disable(logging.DEBUG)
+# logging.disable(logging.DEBUG)
 
 
 class SearchProblem:
@@ -157,7 +157,6 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
     # logging.debug("self.startingPosition = %r", problem.getStartState())
     # return []
 
-
     # Q2: Breadth First Search
 
     # Variables
@@ -165,10 +164,12 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
     # The path taken to reach the current state
     currentPath = []
     visitedStates = []
-    longestFailure = currentPath.copy()
     # Fringe contains tuples, the first element is the state, the second element is the path taken to reach this state, and the third element is the successor
     fringe = util.Queue()
+
+    # Debugging variables
     stepCounter = 0
+    # longestFailure = currentPath.copy()
 
     while not problem.isGoalState(currentState):
         stepCounter += 1
@@ -176,20 +177,25 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
         logging.debug("[ Step %r ]", stepCounter)
         logging.debug("Current State: %r", currentState)
         logging.debug("We reached here by: %r", currentPath)
+        logging.debug("The entire list of visited states:\n%r", visitedStates)
 
         # If this is the first time visiting this state, we expand it
-        if currentState not in visitedStates:
-            visitedStates.append(currentState)
-            successors = problem.getSuccessors(currentState)
-            for successor in successors:
-                fringe.push((currentState, currentPath.copy(), successor))
-        else:
+        # If this is not the first time visiting this state, we can skip it
+        if currentState in visitedStates:
             continue
+
+        visitedStates.append(currentState)
+        successors = problem.getSuccessors(currentState)
+        for successor in successors:
+            logging.debug("Successor: %r", successor)
+            logging.debug("Successor[0]: %r", successor[0])
+            if successor[0] not in visitedStates:
+                fringe.push((currentState, currentPath.copy(), successor))
 
         # If the fringe is empty, we have no solution
         if fringe.isEmpty():
-            logging.info("No solution found, returning longest path attempted")
-            return longestFailure
+            logging.info("No solution found")
+            return []
 
         # Get the next node to expand
         nextSituation = fringe.pop()
@@ -207,8 +213,8 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
         currentState = nextState
         currentPath.append(nextAction)
 
-        if len(currentPath) > len(longestFailure):
-            longestFailure = currentPath.copy()
+        # if len(currentPath) > len(longestFailure):
+        #     longestFailure = currentPath.copy()
 
     return currentPath
 
