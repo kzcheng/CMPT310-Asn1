@@ -294,18 +294,14 @@ class CornersProblem(search.SearchProblem):
     """
 
     # Q5: Finding All the Corners
-    # class State:
-    #     def __init__(self, pacmanPosition, c1Flag, c2Flag, c3Flag, c4Flag):
-    #         self.pacmanPosition = pacmanPosition
-    #         self.c1Flag = c1Flag
-    #         self.c2Flag = c2Flag
-    #         self.c3Flag = c3Flag
-    #         self.c4Flag = c4Flag
 
-    #     def __repr__(self):
-    #         return (f"State(pacmanPosition={self.pacmanPosition}, "
-    #                 f"c1Flag={self.c1Flag}, c2Flag={self.c2Flag}, "
-    #                 f"c3Flag={self.c3Flag}, c4Flag={self.c4Flag})")
+    # Note: Turns out, creating a class to store the state isn't a good idea.
+    # Since classes are more like pointers towards the location of the object, two classes can be "different" even if the contents are the same.
+    # It's best to keep it simple and just use tuples instead.
+
+    # State Tuple = (position, corners)
+    # state[0] = Position of Pacman
+    # state[1] = True if the corner have been visited ((1, 1), (1, top), (right, 1), (right, top))
 
     def __init__(self, startingGameState: pacman.GameState):
         """
@@ -325,18 +321,16 @@ class CornersProblem(search.SearchProblem):
         Returns the start state (in your state space, not the full Pacman state
         space)
         """
-
         # The state should include the current position of Pacman, and whether the 4 corners have been visited
-
-        return (self.startingPosition, False, False, False, False)
+        return (self.startingPosition, (False, False, False, False))
 
     def isGoalState(self, state: any):
         """
         Returns whether this search state is a goal state of the problem.
         """
-
-        isGoal = state[1] and state[2] and state[3] and state[4]
-        return isGoal
+        # The goal state is fulfilled when all corners have been visited
+        # This checks if all values in state[1] are True
+        return all(state[1])
 
     def getSuccessors(self, state: any):
         """
@@ -352,30 +346,22 @@ class CornersProblem(search.SearchProblem):
         successors = []
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
             # Add a successor state to the successor list if the action is legal
-            # Here's a code snippet for figuring out whether a new position hits a wall:
-            #   x,y = currentPosition
-            #   dx, dy = Actions.directionToVector(action)
-            #   nextx, nexty = int(x + dx), int(y + dy)
-            #   hitsWall = self.walls[nextx][nexty]
-
             x, y = state[0]
             dx, dy = Actions.directionToVector(action)
             nextx, nexty = int(x + dx), int(y + dy)
             if not self.walls[nextx][nexty]:
                 nextPosition = (nextx, nexty)
-                nextState = list(state)  # Convert tuple to list
-                nextState[0] = nextPosition
 
-                if nextPosition == self.corners[0]:
-                    nextState[1] = True
-                if nextPosition == self.corners[1]:
-                    nextState[2] = True
-                if nextPosition == self.corners[2]:
-                    nextState[3] = True
-                if nextPosition == self.corners[3]:
-                    nextState[4] = True
+                # Change the flag indicating if a corner has been reached to True if the next position is a corner
+                # Because the flags stored in state[1] is in a tuple, we need to convert it to a list first
+                cornerReached = list(state[1])
+                for i, corner in enumerate(self.corners):
+                    if nextPosition == corner:
+                        cornerReached[i] = True
 
-                nextState = tuple(nextState)  # Convert list back to tuple
+                # Then convert it back to a tuple
+                # Combine with the next position to form the next state
+                nextState = (nextPosition, tuple(cornerReached))
                 cost = 1  # Forced to be 1 for this problem
                 successors.append((nextState, action, cost))
 
