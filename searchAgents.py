@@ -384,6 +384,10 @@ class CornersProblem(search.SearchProblem):
         return len(actions)
 
 
+def getManhattanDistance(positionA, positionB):
+    return abs(positionA[0] - positionB[0]) + abs(positionA[1] - positionB[1])
+
+
 def cornersHeuristic(state: Any, problem: CornersProblem):
     """
     A heuristic for the CornersProblem that you defined.
@@ -393,15 +397,80 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
 
       problem: The CornersProblem instance for this layout.
 
-    This function should always return a number that is a lower bound on the
-    shortest path from the state to a goal of the problem; i.e.  it should be
-    admissible.
+    This function should always return a number that is a lower bound on the shortest path from the state to a goal of the problem; i.e.  it should be admissible.
     """
     corners = problem.corners  # These are the corner coordinates
     walls = problem.walls  # These are the walls of the maze, as a Grid (game.py)
 
-    "*** YOUR CODE HERE ***"
-    return 0  # Default to trivial solution
+    # For a simple heuristic like this, we should find the manhattan distance to the closest corner that we haven't flagged yet, then find the shortest path to reach the remaining corners, assuming the map is empty.
+
+    # To do this, we first order the corners clockwise, with the first corner being the closest one. We will call those corners ABCD for now.
+    # After A is reached, if B still needs to be reached, we go to it, then we go to C, then D, if any needs to be reached.
+    # If B can be skipped, we check D then C.
+    # If B and C can both be skipped, we go directly to D.
+
+    # By default, the order of the corners are ((1, 1), (1, top), (right, 1), (right, top)).
+
+    # Actually, let's just find the closest corner first, and the distance to reach it.
+    position = state[0]
+    closestCornerID = -1
+    distanceToClosestCorner = float('inf')
+
+    # For each corner
+    for i, corner in enumerate(corners):
+        # If we have already visited it, skip it
+        if state[1][i]:
+            continue
+        distanceToCorner = getManhattanDistance(position, corner)
+        if (distanceToCorner < distanceToClosestCorner):
+            closestCornerID = i
+            distanceToClosestCorner = distanceToCorner
+
+    # If we can't find a corner that we haven't visited before, it likely means we have already solved the problem, which means we should return 0.
+    if closestCornerID == -1:
+        return 0
+
+    switch = {
+        0: (0, 1, 3, 2),
+        1: (1, 3, 2, 0),
+        2: (3, 2, 0, 1),
+        3: (2, 0, 1, 3),
+    }
+    cornersCW = (
+        corners[switch[closestCornerID][0]],
+        corners[switch[closestCornerID][1]],
+        corners[switch[closestCornerID][2]],
+        corners[switch[closestCornerID][3]],
+    )
+    cornersCWFlag = (
+        state[1][switch[closestCornerID][0]],
+        state[1][switch[closestCornerID][1]],
+        state[1][switch[closestCornerID][2]],
+        state[1][switch[closestCornerID][3]],
+    )
+    totalDistance = distanceToClosestCorner
+    position = cornersCW[0]
+
+    if cornersCWFlag[1] == False:
+        totalDistance += getManhattanDistance(position, cornersCW[1])
+        position = cornersCW[1]
+        if cornersCWFlag[2] == False:
+            totalDistance += getManhattanDistance(position, cornersCW[2])
+            position = cornersCW[2]
+        if cornersCWFlag[3] == False:
+            totalDistance += getManhattanDistance(position, cornersCW[3])
+            position = cornersCW[3]
+    elif cornersCWFlag[3] == False:
+        totalDistance += getManhattanDistance(position, cornersCW[3])
+        position = cornersCW[3]
+        if cornersCWFlag[2] == False:
+            totalDistance += getManhattanDistance(position, cornersCW[2])
+            position = cornersCW[2]
+    elif cornersCWFlag[2] == False:
+        totalDistance += getManhattanDistance(position, cornersCW[2])
+        position = cornersCW[2]
+
+    return totalDistance  # Default to trivial solution
 
 
 class AStarCornersAgent(SearchAgent):
