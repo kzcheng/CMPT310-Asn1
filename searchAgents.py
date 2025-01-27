@@ -400,7 +400,6 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
     This function should always return a number that is a lower bound on the shortest path from the state to a goal of the problem; i.e.  it should be admissible.
     """
     corners = problem.corners  # These are the corner coordinates
-    walls = problem.walls  # These are the walls of the maze, as a Grid (game.py)
 
     # For a simple heuristic like this, we should find the manhattan distance to the closest corner that we haven't flagged yet, then find the shortest path to reach the remaining corners, assuming the map is empty.
 
@@ -411,7 +410,7 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
 
     # By default, the order of the corners are ((1, 1), (1, top), (right, 1), (right, top)).
 
-    # Actually, let's just find the closest corner first, and the distance to reach it.
+    # To begin, find the closest corner first, and the distance to reach it.
     position = state[0]
     closestCornerID = -1
     distanceToClosestCorner = float('inf')
@@ -429,7 +428,8 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
     # If we can't find a corner that we haven't visited before, it likely means we have already solved the problem, which means we should return 0.
     if closestCornerID == -1:
         return 0
-
+    
+    # This switch includes the order we should check each corner. With the first corner being the closest corner, and the remaining ones being ordered clock wise.
     switch = {
         0: (0, 1, 3, 2),
         1: (1, 3, 2, 0),
@@ -448,6 +448,7 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
         state[1][switch[closestCornerID][2]],
         state[1][switch[closestCornerID][3]],
     )
+
     totalDistance = distanceToClosestCorner
     position = cornersCW[0]
 
