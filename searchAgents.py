@@ -44,8 +44,7 @@ import time
 import search
 import pacman
 
-logging.basicConfig(level=logging.DEBUG, format='%(message)s')
-# logging.disable(logging.DEBUG)
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 
 class GoWestAgent(Agent):
@@ -546,10 +545,6 @@ class AStarFoodSearchAgent(SearchAgent):
         self.searchType = FoodSearchProblem
 
 
-def getFoodCount(foodGrid):
-    return len(foodGrid.asList())
-
-
 def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     """
     Your heuristic for the FoodSearchProblem goes here.
@@ -577,26 +572,30 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
 
     # Q7: Eating All The Dots
 
+    # logging.getLogger().setLevel(logging.DEBUG)
+
     hCost = 0   # Total estimated heuristic cost to be returned
-    foodCount = getFoodCount(foodGrid)
-    hCost += foodCount
+    foodList = foodGrid.asList()    # List of food coordinates
 
-    # If there are no food left, return 0
-    if foodCount == 0:
-        return 0
+    while foodList:
+        # Find distance to reach closest food
+        closestFoodDistance = float('inf')
+        closestFood = None
+        for food in foodList:
+            distance = getManhattanDistance(position, food)
+            if distance < closestFoodDistance:
+                closestFoodDistance = distance
+                closestFood = food
+        if closestFood is not None:
+            logging.debug(f'Closest Food: {closestFood}, Distance: {closestFoodDistance}')
+            logging.debug(f'Food List: {foodList}')
+            hCost += closestFoodDistance
+            position = closestFood
+            foodList.remove(closestFood)
+    
+    logging.getLogger().setLevel(logging.INFO)
 
-    # Find distance to reach closest food
-    closestFoodDistance = float('inf')
-    for food in foodGrid.asList():
-        distance = getManhattanDistance(position, food)
-        if distance < closestFoodDistance:
-            closestFoodDistance = distance
-
-    hCost += closestFoodDistance
-
-    logging.debug(f'Position: {position}, Food: {foodGrid.asList()}, Food Count: {foodCount}, Closest Food Distance: {closestFoodDistance}, hCost: {hCost}')
-
-    return hCost - 1
+    return hCost
 
 
 class ClosestDotSearchAgent(SearchAgent):

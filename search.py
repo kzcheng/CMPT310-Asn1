@@ -23,8 +23,7 @@ from game import Directions
 from typing import List
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(message)s')
-logging.disable(logging.DEBUG)
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 
 class SearchProblem:
