@@ -34,6 +34,7 @@ description for details.
 Good luck and happy searching!
 """
 
+import logging
 from typing import List, Tuple, Any
 from game import Directions
 from game import Agent
@@ -42,6 +43,9 @@ import util
 import time
 import search
 import pacman
+
+logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+# logging.disable(logging.DEBUG)
 
 
 class GoWestAgent(Agent):
@@ -428,7 +432,7 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
     # If we can't find a corner that we haven't visited before, it likely means we have already solved the problem, which means we should return 0.
     if closestCornerID == -1:
         return 0
-    
+
     # This switch includes the order we should check each corner. With the first corner being the closest corner, and the remaining ones being ordered clock wise.
     switch = {
         0: (0, 1, 3, 2),
@@ -542,6 +546,10 @@ class AStarFoodSearchAgent(SearchAgent):
         self.searchType = FoodSearchProblem
 
 
+def getFoodCount(foodGrid):
+    return len(foodGrid.asList())
+
+
 def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     """
     Your heuristic for the FoodSearchProblem goes here.
@@ -566,8 +574,29 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     problem.heuristicInfo['wallCount']
     """
     position, foodGrid = state
-    "*** YOUR CODE HERE ***"
-    return 0
+
+    # Q7: Eating All The Dots
+
+    hCost = 0   # Total estimated heuristic cost to be returned
+    foodCount = getFoodCount(foodGrid)
+    hCost += foodCount
+
+    # If there are no food left, return 0
+    if foodCount == 0:
+        return 0
+
+    # Find distance to reach closest food
+    closestFoodDistance = float('inf')
+    for food in foodGrid.asList():
+        distance = getManhattanDistance(position, food)
+        if distance < closestFoodDistance:
+            closestFoodDistance = distance
+
+    hCost += closestFoodDistance
+
+    logging.debug(f'Position: {position}, Food: {foodGrid.asList()}, Food Count: {foodCount}, Closest Food Distance: {closestFoodDistance}, hCost: {hCost}')
+
+    return hCost - 1
 
 
 class ClosestDotSearchAgent(SearchAgent):
