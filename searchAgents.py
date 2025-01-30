@@ -551,7 +551,7 @@ class AStarFoodSearchAgent(SearchAgent):
 # Given a position and a list of food coordinates, find the furthest food from the position, and remove that food from the list
 def findFurthestFood(position, foodList):
     if not foodList:
-        return None
+        return None, foodList
     furthestFood = None     # The furthest food from pacman
     furthestFoodDistance = 0    # The distance to the furthest food from pacman
     for food in foodList:
@@ -559,8 +559,34 @@ def findFurthestFood(position, foodList):
         if distance > furthestFoodDistance:
             furthestFood = food
             furthestFoodDistance = distance
-    foodList.remove(furthestFood)
-    return furthestFood
+    newFoodList = foodList[:]
+    newFoodList.remove(furthestFood)
+    return furthestFood, newFoodList
+
+
+def convertFoodSearchToPositionSearch(foodSearchProblem, startPosition, goalPosition):
+    """
+    Converts a FoodSearchProblem to a PositionSearchProblem targeting a specific food position.
+
+    foodSearchProblem: The FoodSearchProblem instance.
+    startPosition: The starting position of Pacman.
+    goalPosition: The position of the food to target.
+
+    Returns: A PositionSearchProblem instance.
+    """
+    # Extract the current game state from the FoodSearchProblem
+    gameState = foodSearchProblem.startingGameState
+
+    # Create a new PositionSearchProblem with the start position and the goal position
+    positionSearchProblem = PositionSearchProblem(
+        gameState=gameState,
+        goal=goalPosition,
+        start=startPosition,  # Pacman's starting position
+        warn=False,
+        visualize=False
+    )
+
+    return positionSearchProblem
 
 
 def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
@@ -590,6 +616,10 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
 
     # Q7: Eating All The Dots
 
+    # Initialize heuristicInfo['calculatedPathCosts'] if it doesn't exist
+    if 'calculatedPathCosts' not in problem.heuristicInfo:
+        problem.heuristicInfo['calculatedPathCosts'] = {}
+
     # Plan for heuristic:
     # So, there are three important locations that pacman will need to visit. The current location pacman is at, the dot that is furthest away from pacman, and the dot that is the furthest away from that dot.
     # Those 3 locations form a "triangle", and is roughly the furthest 3 places pacman must visit. So I think recording those 2 dots, and let pacman visit the closer one, than the further one would work.
@@ -605,26 +635,33 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     if not foodList:
         return hCost
 
-    twoFurthestFood = []  # The two furthest food from pacman
-    firstFood = findFurthestFood(position, foodList)
-    if firstFood is not None:
-        twoFurthestFood.append(firstFood)
-        secondFood = findFurthestFood(firstFood, foodList)
-        if secondFood is not None:
-            twoFurthestFood.append(secondFood)
+    # New idea:
+    # What if we just A star path find from the first food to the second one after reaching one food?
 
-    while twoFurthestFood:
-        closestFoodDistance = float('inf')
-        closestFood = None
-        for food in twoFurthestFood:
-            distance = getManhattanDistance(position, food)
-            if distance < closestFoodDistance:
-                closestFoodDistance = distance
-                closestFood = food
-        if closestFood is not None:
-            hCost += closestFoodDistance
-            position = closestFood
-            twoFurthestFood.remove(closestFood)
+    # Food B is the furthest food, and food A is the food that is furthest from that
+    # Because food B must be the furthest one away, food A is always closer to the starting position than food B
+    foodB, foodList = findFurthestFood(position, foodList)
+    if not foodB:
+        return hCost
+    foodA, foodList = findFurthestFood(foodB, foodList)
+    if not foodA:
+        return hCost + getManhattanDistance(position, foodB)
+
+    # Find manhattan distance to food A and move there
+    if (position, foodA) in problem.heuristicInfo['calculatedPathCosts']:
+        hCost += problem.heuristicInfo['calculatedPathCosts'][(position, foodA)]
+    else:
+        hCost += getManhattanDistance(position, foodA)
+
+    if (foodA, foodB) in problem.heuristicInfo['calculatedPathCosts']:
+        hCost += problem.heuristicInfo['calculatedPathCosts'][(foodA, foodB)]
+    else:
+        # Now, path find from food A to food B
+        # But do it hardcore with A Star
+        problemFoodAToB = convertFoodSearchToPositionSearch(problem, foodA, foodB)
+        path = search.aStarSearch(problemFoodAToB, heuristic=manhattanHeuristic)
+        hCost += len(path)
+        problem.heuristicInfo['calculatedPathCosts'][(foodA, foodB)] = hCost
 
     logging.getLogger().setLevel(logging.INFO)
 

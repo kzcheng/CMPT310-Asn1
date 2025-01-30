@@ -386,7 +386,7 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directi
         # Check if we are analyzing the goal, if so, we are done
         if context.problem.isGoalState(state):
             logging.debug("")
-            logging.info("Goal State Reached")
+            logging.debug("Goal State Reached")
 
             path = context.paths[state]
             logging.debug("Path Found")
