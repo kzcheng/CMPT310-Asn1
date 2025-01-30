@@ -648,7 +648,10 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
         return hCost + getManhattanDistance(position, foodB)
 
     # Find manhattan distance to food A and move there
-    hCost += getManhattanDistance(position, foodA)
+    if (position, foodA) in problem.heuristicInfo['calculatedPathCosts']:
+        hCost += problem.heuristicInfo['calculatedPathCosts'][(position, foodA)]
+    else:
+        hCost += getManhattanDistance(position, foodA)
 
     if (foodA, foodB) in problem.heuristicInfo['calculatedPathCosts']:
         hCost += problem.heuristicInfo['calculatedPathCosts'][(foodA, foodB)]
