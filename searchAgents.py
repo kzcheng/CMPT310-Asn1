@@ -616,6 +616,10 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
 
     # Q7: Eating All The Dots
 
+    # Initialize heuristicInfo['calculatedPathCosts'] if it doesn't exist
+    if 'calculatedPathCosts' not in problem.heuristicInfo:
+        problem.heuristicInfo['calculatedPathCosts'] = {}
+
     # Plan for heuristic:
     # So, there are three important locations that pacman will need to visit. The current location pacman is at, the dot that is furthest away from pacman, and the dot that is the furthest away from that dot.
     # Those 3 locations form a "triangle", and is roughly the furthest 3 places pacman must visit. So I think recording those 2 dots, and let pacman visit the closer one, than the further one would work.
@@ -645,13 +649,16 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
 
     # Find manhattan distance to food A and move there
     hCost += getManhattanDistance(position, foodA)
-    position = foodA
 
-    # Now, path find from food A to food B
-    # But do it hardcore with A Star
-    problemFoodAToB = convertFoodSearchToPositionSearch(problem, position, foodB)
-    path = search.aStarSearch(problemFoodAToB, heuristic=manhattanHeuristic)
-    hCost += len(path)
+    if (foodA, foodB) in problem.heuristicInfo['calculatedPathCosts']:
+        hCost += problem.heuristicInfo['calculatedPathCosts'][(foodA, foodB)]
+    else:
+        # Now, path find from food A to food B
+        # But do it hardcore with A Star
+        problemFoodAToB = convertFoodSearchToPositionSearch(problem, foodA, foodB)
+        path = search.aStarSearch(problemFoodAToB, heuristic=manhattanHeuristic)
+        hCost += len(path)
+        problem.heuristicInfo['calculatedPathCosts'][(foodA, foodB)] = hCost
 
     logging.getLogger().setLevel(logging.INFO)
 
